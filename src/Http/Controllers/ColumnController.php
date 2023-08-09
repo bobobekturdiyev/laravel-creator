@@ -39,7 +39,7 @@ class ColumnController extends Controller
         }
 
         if ($request->controller === 'true') {
-            $this->generateController($request->model_name, $request->has_swagger);
+            $this->generateController($request->model_name, $request->has_swagger, $request->columns);
             $this->appendToApiRoutes($request->model_name);
             $data[] = "controller generated";
 
@@ -295,7 +295,7 @@ class ColumnController extends Controller
     }
 
 
-    public function generateController($modelName, $has_swagger)
+    public function generateController($modelName, $has_swagger, $columns)
     {
         $modelVariable = strtolower($modelName);
         $modelResource = "{$modelName}Resource";
