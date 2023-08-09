@@ -1,0 +1,21 @@
+{
+    "name": "programmeruz/laravel-creator",
+    "description": "Generate Model, Migration, Seeder, Factory, Resource, Controller, SWAGGER using simple form",
+    "type": "library",
+    "require": {
+        "darkaonline/l5-swagger": "^8.5"
+    },
+    "license": "Apache",
+    "autoload": {
+        "psr-4": {
+            "Programmeruz\\LaravelCreator\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Bobobek Turdiyev",
+            "email": "info@programmer.uz"
+        }
+    ],
+    "minimum-stability": "stable"
+}

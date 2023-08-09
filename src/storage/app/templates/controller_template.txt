@@ -1,0 +1,44 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\MODEL_NAME;
+use App\Http\Resources\MODEL_RESOURCE;
+use Illuminate\Http\Request;
+
+class MODEL_CONTROLLER extends Controller
+{
+    SWAGGER_GET_ALL
+    public function index()
+    {
+        $MODEL_VARIABLES = MODEL_NAME::all();
+        return MODEL_RESOURCE::collection($MODEL_VARIABLES);
+    }
+
+    SWAGGER_GET_SINGLE
+    public function show(MODEL_NAME $MODEL_VARIABLE)
+    {
+        return new MODEL_RESOURCE($MODEL_VARIABLE);
+    }
+
+    SWAGGER_CREATE
+    public function store(Request $request)
+    {
+        $MODEL_VARIABLE = MODEL_NAME::create($request->all());
+        return new MODEL_RESOURCE($MODEL_VARIABLE);
+    }
+
+    SWAGGER_UPDATE
+    public function update(Request $request, MODEL_NAME $MODEL_VARIABLE)
+    {
+        $MODEL_VARIABLE->update($request->all());
+        return new MODEL_RESOURCE($MODEL_VARIABLE);
+    }
+
+    SWAGGER_DELETE
+    public function destroy(MODEL_NAME $MODEL_VARIABLE)
+    {
+        $MODEL_VARIABLE->delete();
+        return response()->json(null, 204);
+    }
+}
