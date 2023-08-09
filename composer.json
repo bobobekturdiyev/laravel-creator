@@ -17,6 +17,6 @@
             "email": "info@programmer.uz"
         }
     ],
-    "minimum-stability": "dev",
+    "minimum-stability": "stable",
     "prefer-stable": true
 }
