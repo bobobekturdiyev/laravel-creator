@@ -456,20 +456,7 @@ class ColumnController extends Controller
                 $property .= ', format="'.$format.'"';
             }
 
-            $faker = \Faker\Factory::create();
-            if ($type === 'string') {
-                $exampleValue = $faker->word;
-            } elseif ($type === 'integer') {
-                $exampleValue = $faker->randomNumber();
-            } elseif ($type === 'number') {
-                $exampleValue = $faker->randomFloat();
-            } elseif ($type === 'boolean') {
-                $exampleValue = $faker->boolean;
-            } else {
-                $exampleValue = "";
-            }
-
-            $property .= ', example="'.$exampleValue.'")';
+            $property .= ', example="")';
             $columnDefinitions[] = $property;
         }
 
