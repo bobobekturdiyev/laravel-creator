@@ -304,6 +304,7 @@ class ColumnController extends Controller
             $swaggerGetAll = '/**
          * @OA\Get(path="/MODEL_VARIABLE",
          *   summary="Get all MODEL_NAMES",
+         *   tags={"MODEL_NAME"},
          *   @OA\Response(response="200", description="List of MODEL_NAMES")
          * )
          */';
@@ -311,6 +312,7 @@ class ColumnController extends Controller
             $swaggerGetSingle = '/**
          * @OA\Get(path="/MODEL_VARIABLE/{id}",
          *   summary="Get a single MODEL_NAME by ID",
+         *   tags={"MODEL_NAME"},
          *   @OA\Response(response="200", description="Single MODEL_NAME")
          * )
          */';
@@ -318,6 +320,7 @@ class ColumnController extends Controller
             $swaggerCreate = '/**
          * @OA\Post(path="/MODEL_VARIABLE",
          *   summary="Create a new MODEL_NAME",
+         *   tags={"MODEL_NAME"},
          *   @OA\Response(response="201", description="Newly created MODEL_NAME")
          * )
          */';
@@ -325,6 +328,7 @@ class ColumnController extends Controller
             $swaggerUpdate = '/**
          * @OA\Put(path="/MODEL_VARIABLE/{id}",
          *   summary="Update a MODEL_NAME by ID",
+         *   tags={"MODEL_NAME"},
          *   @OA\Response(response="200", description="Updated MODEL_NAME")
          * )
          */';
@@ -332,6 +336,7 @@ class ColumnController extends Controller
             $swaggerDelete = '/**
          * @OA\Delete(path="/MODEL_VARIABLE/{id}",
          *   summary="Delete a MODEL_NAME by ID",
+         *   tags={"MODEL_NAME"},
          *   @OA\Response(response="204", description="MODEL_NAME deleted successfully")
          * )
          */';

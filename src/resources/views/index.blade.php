@@ -313,8 +313,6 @@
                     nullable: row.find('input[name="col_nullable[]"]').prop('checked'),
                 });
             });
-
-            console.log(JSON.stringify(data))
             $.ajax({
                 headers: {
                     'X-Requested-With': 'XMLHttpRequest'
@@ -324,7 +322,7 @@
                 data: data,
                 success: function (response) {
                     // Handle success response
-                    console.log(response);
+                   alert(response);
                 },
                 error: function (error) {
                     // Handle error response

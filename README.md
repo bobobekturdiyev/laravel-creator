@@ -37,6 +37,21 @@ your-laravel-app-url/creator
 Here, you'll find the intuitive UI to guide you through the code generation process.
 
 ## Using Swagger Documentation
+In order to use Swagger, don't forget to add @OA\Info in your main Controller class
+```
+/**
+ * @OA\Info(
+ *     version="1.0",
+ *     title="Example for response examples value"
+ * )
+ */
+ 
+class Controller extends BaseController
+{
+    use AuthorizesRequests, ValidatesRequests;
+}
+```
+
 To utilize the Swagger feature, after setting up your routes and controllers with Laravel Creator, run the following command:
 ```
 php artisan l5-swagger:generate
