@@ -16,6 +16,11 @@
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                 <li class="nav-item">
                     &copy; Created by Bobobek Turdiev - Programmer UZ
+                </li>  <li class="nav-item">
+                </li>
+
+                <li class="nav-item">
+                   <a class="btn btn-success" href="{{url('/api/documentation')}}" target="_blank">Open Swagger</a>
                 </li>
             </ul>
 

@@ -311,7 +311,7 @@ class ColumnController extends Controller
         if($has_swagger == "true") {
             $swaggerGetAll = '/**
  * @OA\Get(
- *      path="/MODEL_VARIABLE",
+ *      path="api/MODEL_VARIABLE",
  *      security={{"api":{}}},
  *      operationId="MODEL_VARIABLE_index",
  *      summary="Get all MODEL_NAMEs",
@@ -326,7 +326,7 @@ class ColumnController extends Controller
 
             $swaggerGetSingle = '/**
  * @OA\Get(
- *      path="/MODEL_VARIABLE/{id}",
+ *      path="api/MODEL_VARIABLE/{id}",
  *      security={{"api":{}}},
  *      operationId="MODEL_VARIABLE_show",
  *      summary="Get a single MODEL_NAME by ID",
@@ -348,7 +348,7 @@ class ColumnController extends Controller
 
             $swaggerCreate = '/**
  * @OA\Post(
- *      path="/MODEL_VARIABLE",
+ *      path="api/MODEL_VARIABLE",
  *      security={{"api":{}}},
  *      operationId="MODEL_VARIABLE_store",
  *      summary="Create a new MODEL_NAME",
@@ -368,7 +368,7 @@ class ColumnController extends Controller
 
             $swaggerUpdate = '/**
  * @OA\Put(
- *      path="/MODEL_VARIABLE/{id}",
+ *      path="api/MODEL_VARIABLE/{id}",
  *      security={{"api":{}}},
  *      operationId="MODEL_VARIABLE_update",
  *      summary="Update a MODEL_NAME by ID",
@@ -397,7 +397,7 @@ class ColumnController extends Controller
 
             $swaggerDelete = '/**
  * @OA\Delete(
- *      path="/MODEL_VARIABLE/{id}",
+ *      path="api/MODEL_VARIABLE/{id}",
  *      security={{"api":{}}},
  *      operationId="MODEL_VARIABLE_delete",
  *      summary="Delete a MODEL_NAME by ID",
