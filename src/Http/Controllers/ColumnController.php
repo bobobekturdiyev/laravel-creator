@@ -48,6 +48,7 @@ class ColumnController extends Controller
     private function generateModel($columns, $modelName)
     {
         $modelTemplate = __DIR__ . '/../../storage/app/templates/model_template.txt';
+        $modelTemplate = File::get($modelTemplate);
 
         $columnNames = '';
         foreach ($columns as $column) {
@@ -63,6 +64,8 @@ class ColumnController extends Controller
     private function generateMigration($columns, $modelName)
     {
         $migrationTemplate = __DIR__ . '/../../storage/app/templates/migration_template.txt';
+        $migrationTemplate = File::get($migrationTemplate);
+
         $migrationName = Str::plural(Str::snake($modelName));
         $tableName = date('Y_m_d_His') . "_create_{$migrationName}_table.php";
 
@@ -227,6 +230,7 @@ class ColumnController extends Controller
         }
 
         $templateContent = __DIR__ . '/../../storage/app/templates/factory_template.txt';
+        $templateContent = File::get($templateContent);
 
         $templateContent = str_replace('MODEL_NAME', $modelName, $templateContent);
         $templateContent = str_replace('FACTORY_FIELDS', $factoryFields, $templateContent);
@@ -239,6 +243,7 @@ class ColumnController extends Controller
     {
         // Fetch template content
         $templateContent = __DIR__ . '/../../storage/app/templates/seeder_template.txt';
+        $templateContent = File::get($templateContent);
 
         // Replace placeholders with the actual model name
         $templateContent = str_replace('MODEL_NAME', $modelName, $templateContent);
@@ -255,6 +260,7 @@ class ColumnController extends Controller
 
         // Fetch template content
         $templateContent = __DIR__ . '/../../storage/app/templates/resource_template.txt';
+        $templateContent = File::get($templateContent);
 
 
         // Replace placeholders with the actual model name
@@ -287,8 +293,7 @@ class ColumnController extends Controller
         $modelResource = "{$modelName}Resource";
         $controllerName = "{$modelName}Controller";
 
-        $templateContent = __DIR__ . '/../../storage/app/templates/controller_template.txt';
-
+        $templateContent = File::get(__DIR__ . '/../../storage/app/templates/controller_template.txt');
         $swaggerGetAll = '';
         $swaggerGetSingle = '';
         $swaggerCreate = '';
