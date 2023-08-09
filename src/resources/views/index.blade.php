@@ -117,6 +117,10 @@
             </table>
             <div class="mb-3 mt-4">
                 <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="checkbox" id="allCheck">
+                    <label class="form-check-label" for="allCheck">All of them</label>
+                </div>
+                <div class="form-check form-check-inline">
                     <input class="form-check-input" type="checkbox" id="modelCheck" value="model">
                     <label class="form-check-label" for="modelCheck">Model</label>
                 </div>
@@ -278,6 +282,26 @@
         $('#modelCheck').change(function() {
             if (!$(this).prop('checked')) {
                 $('#migration').prop('checked', false);
+            }
+        });
+
+        $('#allCheck').change(function() {
+            if (!$(this).prop('checked')) {
+                $('#modelCheck').prop('checked', false);
+                $('#migration').prop('checked', false);
+                $('#factory').prop('checked', false);
+                $('#seeder').prop('checked', false);
+                $('#resource').prop('checked', false);
+                $('#controller').prop('checked', false);
+                $('#has_swagger').prop('checked', false);
+            }else{
+                $('#modelCheck').prop('checked', true);
+                $('#migration').prop('checked', true);
+                $('#factory').prop('checked', true);
+                $('#seeder').prop('checked', true);
+                $('#resource').prop('checked', true);
+                $('#controller').prop('checked', true);
+                $('#has_swagger').prop('checked', true);
             }
         });
 
