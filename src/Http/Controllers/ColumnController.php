@@ -4,6 +4,7 @@ namespace Programmeruz\LaravelCreator\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -23,7 +24,9 @@ class ColumnController extends Controller
         if ($request->migration === 'true') {
             $this->generateMigration($request->columns, $request->model_name);
             $data[] = "migration generated";
+            Artisan::call('migrate');
         }
+
         if ($request->factory === 'true') {
             $this->generateFactory($request->columns, $request->model_name);
             $this->generateSeeder($request->model_name);
@@ -39,6 +42,11 @@ class ColumnController extends Controller
             $this->generateController($request->model_name, $request->has_swagger);
             $this->appendToApiRoutes($request->model_name);
             $data[] = "controller generated";
+
+            if($request->has_swagger === 'true') {
+                $exitCode = Artisan::call('l5-swagger:generate');
+            }
+
         }
 
 
