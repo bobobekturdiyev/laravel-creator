@@ -315,8 +315,11 @@ class ColumnController extends Controller
  *      security={{"api":{}}},
  *      operationId="MODEL_VARIABLE_index",
  *      summary="Get all MODEL_NAMES",
- *      description="Retrieve all MODEL_NAMES",
+ *      description="Retrieve all MODEL_NAMEs",
  *      tags={"MODEL_NAME API CRUD"},
+      *       @OA\Response(response=400, description="Bad request"),
+     *      @OA\Response(response=404, description="Not found"),
+     *      @OA\Response(response=500, description="Server error")
  * )
  */';
 
@@ -336,6 +339,9 @@ class ColumnController extends Controller
  *          description="ID of the MODEL_NAME to retrieve",
  *          @OA\Schema(type="integer")
  *      ),
+      *       @OA\Response(response=400, description="Bad request"),
+     *      @OA\Response(response=404, description="Not found"),
+     *      @OA\Response(response=500, description="Server error")
  * )
  */';
 
@@ -355,6 +361,7 @@ class ColumnController extends Controller
  *              )
  *          )
  *      ),
+ *       @OA\Response(response=400, description="Bad request")
  * )
  */';
 
@@ -381,6 +388,9 @@ class ColumnController extends Controller
  *              )
  *          )
  *      ),
+      *       @OA\Response(response=400, description="Bad request"),
+     *      @OA\Response(response=404, description="Not found"),
+     *      @OA\Response(response=500, description="Server error")
  * )
  */';
 
@@ -400,6 +410,9 @@ class ColumnController extends Controller
  *          description="ID of the MODEL_NAME to delete",
  *          @OA\Schema(type="integer")
  *      ),
+*       @OA\Response(response=400, description="Bad request"),
+     *      @OA\Response(response=404, description="Not found"),
+     *      @OA\Response(response=500, description="Server error")
  * )
  */';
 
