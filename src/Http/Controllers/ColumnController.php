@@ -317,12 +317,6 @@ class ColumnController extends Controller
  *      summary="Get all MODEL_NAMES",
  *      description="Retrieve all MODEL_NAMES",
  *      tags={"MODEL_NAME API CRUD"},
- *      @OA\Response(response=200,description="Successful operation",
- *          @OA\JsonContent(ref="#/components/schemas/MODEL_NAME"),
- *      ),
- *      @OA\Response(response=404,description="Not found",
- *          @OA\JsonContent(ref="#/components/schemas/Error"),
- *      ),
  * )
  */';
 
@@ -342,12 +336,6 @@ class ColumnController extends Controller
  *          description="ID of the MODEL_NAME to retrieve",
  *          @OA\Schema(type="integer")
  *      ),
- *      @OA\Response(response=200,description="Successful operation",
- *          @OA\JsonContent(ref="#/components/schemas/MODEL_NAME"),
- *      ),
- *      @OA\Response(response=404,description="Not found",
- *          @OA\JsonContent(ref="#/components/schemas/Error"),
- *      ),
  * )
  */';
 
@@ -366,12 +354,6 @@ class ColumnController extends Controller
  *                 COLUMN_DEFINITIONS
  *              )
  *          )
- *      ),
- *      @OA\Response(response=200,description="Successful operation",
- *          @OA\JsonContent(ref="#/components/schemas/MODEL_NAME"),
- *      ),
- *      @OA\Response(response=404,description="Not found",
- *          @OA\JsonContent(ref="#/components/schemas/Error"),
  *      ),
  * )
  */';
@@ -399,12 +381,6 @@ class ColumnController extends Controller
  *              )
  *          )
  *      ),
- *      @OA\Response(response=200,description="Successful operation",
- *          @OA\JsonContent(ref="#/components/schemas/MODEL_NAME"),
- *      ),
- *      @OA\Response(response=404,description="Not found",
- *          @OA\JsonContent(ref="#/components/schemas/Error"),
- *      ),
  * )
  */';
 
@@ -423,10 +399,6 @@ class ColumnController extends Controller
  *          required=true,
  *          description="ID of the MODEL_NAME to delete",
  *          @OA\Schema(type="integer")
- *      ),
- *      @OA\Response(response=204,description="Successful operation, no content returned"),
- *      @OA\Response(response=404,description="Not found",
- *          @OA\JsonContent(ref="#/components/schemas/Error"),
  *      ),
  * )
  */';
