@@ -469,7 +469,7 @@ class ColumnController extends Controller
                 $exampleValue = "";
             }
 
-            $property .= '", example="'.$exampleValue.'")';
+            $property .= ', example="'.$exampleValue.'")';
             $columnDefinitions[] = $property;
         }
 
