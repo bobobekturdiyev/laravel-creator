@@ -1,5 +1,5 @@
 <?php
-namespace YourVendor\YourPackageName;
+namespace Programmeruz\LaravelCreator;
 
 use Illuminate\Support\ServiceProvider;
 
