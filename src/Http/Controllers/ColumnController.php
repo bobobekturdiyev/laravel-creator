@@ -469,7 +469,7 @@ class ColumnController extends Controller
             }
         }
 
-        $COLUMNS_REQUIRED = '"' . implode('", "', $requiredColumns) . '"';
+        $COLUMNS_REQUIRED = '{"' . implode('", "', $requiredColumns) . '"}';
         $swaggerUpdate = str_replace('COLUMNS_REQUIRED', $COLUMNS_REQUIRED, $swaggerUpdate);
         $swaggerCreate = str_replace('COLUMNS_REQUIRED', $COLUMNS_REQUIRED, $swaggerCreate);
 
