@@ -310,45 +310,183 @@ class ColumnController extends Controller
 
         if($has_swagger == "true") {
             $swaggerGetAll = '/**
-         * @OA\Get(path="/MODEL_VARIABLE",
-         *   summary="Get all MODEL_NAMES",
-         *   tags={"MODEL_NAME"},
-         *   @OA\Response(response="200", description="List of MODEL_NAMES")
-         * )
-         */';
+ * @OA\Get(
+ *      path="/MODEL_VARIABLE",
+ *      security={{"api":{}}},
+ *      operationId="MODEL_VARIABLE_index",
+ *      summary="Get all MODEL_NAMES",
+ *      description="Retrieve all MODEL_NAMES",
+ *      tags={"MODEL_NAME API CRUD"},
+ *      @OA\Response(response=200,description="Successful operation",
+ *          @OA\JsonContent(ref="#/components/schemas/MODEL_NAME"),
+ *      ),
+ *      @OA\Response(response=404,description="Not found",
+ *          @OA\JsonContent(ref="#/components/schemas/Error"),
+ *      ),
+ * )
+ */';
+
 
             $swaggerGetSingle = '/**
-         * @OA\Get(path="/MODEL_VARIABLE/{id}",
-         *   summary="Get a single MODEL_NAME by ID",
-         *   tags={"MODEL_NAME"},
-         *   @OA\Response(response="200", description="Single MODEL_NAME")
-         * )
-         */';
+ * @OA\Get(
+ *      path="/MODEL_VARIABLE/{id}",
+ *      security={{"api":{}}},
+ *      operationId="MODEL_VARIABLE_show",
+ *      summary="Get a single MODEL_NAME by ID",
+ *      description="Retrieve a single MODEL_NAME by its ID",
+ *      tags={"MODEL_NAME API CRUD"},
+ *      @OA\Parameter(
+ *          name="id",
+ *          in="path",
+ *          required=true,
+ *          description="ID of the MODEL_NAME to retrieve",
+ *          @OA\Schema(type="integer")
+ *      ),
+ *      @OA\Response(response=200,description="Successful operation",
+ *          @OA\JsonContent(ref="#/components/schemas/MODEL_NAME"),
+ *      ),
+ *      @OA\Response(response=404,description="Not found",
+ *          @OA\JsonContent(ref="#/components/schemas/Error"),
+ *      ),
+ * )
+ */';
+
 
             $swaggerCreate = '/**
-         * @OA\Post(path="/MODEL_VARIABLE",
-         *   summary="Create a new MODEL_NAME",
-         *   tags={"MODEL_NAME"},
-         *   @OA\Response(response="201", description="Newly created MODEL_NAME")
-         * )
-         */';
+ * @OA\Post(
+ *      path="/MODEL_VARIABLE",
+ *      security={{"api":{}}},
+ *      operationId="MODEL_VARIABLE_store",
+ *      summary="Create a new MODEL_NAME",
+ *      description="Add a new MODEL_NAME",
+ *      tags={"MODEL_NAME API CRUD"},
+ *      @OA\RequestBody(required=true, description="MODEL_NAME save",
+ *           @OA\MediaType(mediaType="multipart/form-data",
+ *              @OA\Schema(type="object", required=COLUMNS_REQUIRED,
+ *                 COLUMN_DEFINITIONS
+ *              )
+ *          )
+ *      ),
+ *      @OA\Response(response=200,description="Successful operation",
+ *          @OA\JsonContent(ref="#/components/schemas/MODEL_NAME"),
+ *      ),
+ *      @OA\Response(response=404,description="Not found",
+ *          @OA\JsonContent(ref="#/components/schemas/Error"),
+ *      ),
+ * )
+ */';
+
 
             $swaggerUpdate = '/**
-         * @OA\Put(path="/MODEL_VARIABLE/{id}",
-         *   summary="Update a MODEL_NAME by ID",
-         *   tags={"MODEL_NAME"},
-         *   @OA\Response(response="200", description="Updated MODEL_NAME")
-         * )
-         */';
+ * @OA\Put(
+ *      path="/MODEL_VARIABLE/{id}",
+ *      security={{"api":{}}},
+ *      operationId="MODEL_VARIABLE_update",
+ *      summary="Update a MODEL_NAME by ID",
+ *      description="Update a specific MODEL_NAME by its ID",
+ *      tags={"MODEL_NAME API CRUD"},
+ *      @OA\Parameter(
+ *          name="id",
+ *          in="path",
+ *          required=true,
+ *          description="ID of the MODEL_NAME to update",
+ *          @OA\Schema(type="integer")
+ *      ),
+ *      @OA\RequestBody(required=true, description="MODEL_NAME update",
+ *           @OA\MediaType(mediaType="multipart/form-data",
+ *              @OA\Schema(type="object", required=COLUMNS_REQUIRED,
+ *                 COLUMN_DEFINITIONS
+ *              )
+ *          )
+ *      ),
+ *      @OA\Response(response=200,description="Successful operation",
+ *          @OA\JsonContent(ref="#/components/schemas/MODEL_NAME"),
+ *      ),
+ *      @OA\Response(response=404,description="Not found",
+ *          @OA\JsonContent(ref="#/components/schemas/Error"),
+ *      ),
+ * )
+ */';
+
 
             $swaggerDelete = '/**
-         * @OA\Delete(path="/MODEL_VARIABLE/{id}",
-         *   summary="Delete a MODEL_NAME by ID",
-         *   tags={"MODEL_NAME"},
-         *   @OA\Response(response="204", description="MODEL_NAME deleted successfully")
-         * )
-         */';
+ * @OA\Delete(
+ *      path="/MODEL_VARIABLE/{id}",
+ *      security={{"api":{}}},
+ *      operationId="MODEL_VARIABLE_delete",
+ *      summary="Delete a MODEL_NAME by ID",
+ *      description="Remove a specific MODEL_NAME by its ID",
+ *      tags={"MODEL_NAME API CRUD"},
+ *      @OA\Parameter(
+ *          name="id",
+ *          in="path",
+ *          required=true,
+ *          description="ID of the MODEL_NAME to delete",
+ *          @OA\Schema(type="integer")
+ *      ),
+ *      @OA\Response(response=204,description="Successful operation, no content returned"),
+ *      @OA\Response(response=404,description="Not found",
+ *          @OA\JsonContent(ref="#/components/schemas/Error"),
+ *      ),
+ * )
+ */';
+
         }
+
+        $columnDefinitions = [];
+        foreach($columns as $column) {
+            $type = "string"; // default type
+            switch($column['type']) {
+                case "integer":
+                case "bigInteger":
+                case "unsignedBigInteger":
+                case "smallInteger":
+                case "unsignedInteger":
+                case "tinyInteger":
+                    $type = "integer";
+                    break;
+                case "float":
+                case "double":
+                case "decimal":
+                    $type = "number";
+                    break;
+                case "boolean":
+                    $type = "boolean";
+                    break;
+                case "timestamp":
+                case "date":
+                case "dateTime":
+                case "dateTimeTz":
+                    $type = "string";
+                    $format = "date-time";
+                    break;
+                default:
+                    $type = "string";
+            }
+
+            $property = '@OA\Property(property="'.$column['name'].'", type="'.$type;
+            if(isset($format)) {
+                $property .= '", format="'.$format;
+            }
+            $property .= '", example="Your example value here")';
+            $columnDefinitions[] = $property;
+        }
+
+        $columnDefinitionsStr = implode(",\n", $columnDefinitions);
+        $swaggerUpdate = str_replace('COLUMN_DEFINITIONS', $columnDefinitionsStr, $swaggerUpdate);
+        $swaggerCreate = str_replace('COLUMN_DEFINITIONS', $columnDefinitionsStr, $swaggerCreate);
+
+        $requiredColumns = [];
+
+        foreach ($columns as $column) {
+            if ($column['nullable'] == 'false') {
+                $requiredColumns[] = $column['name'];
+            }
+        }
+
+        $COLUMNS_REQUIRED = '"' . implode('", "', $requiredColumns) . '"';
+        $swaggerUpdate = str_replace('COLUMNS_REQUIRED', $COLUMNS_REQUIRED, $swaggerUpdate);
+        $swaggerCreate = str_replace('COLUMNS_REQUIRED', $COLUMNS_REQUIRED, $swaggerCreate);
 
         $swaggerGetAll = str_replace('MODEL_VARIABLE', $modelVariable, $swaggerGetAll);
         $swaggerGetSingle = str_replace('MODEL_VARIABLE', $modelVariable, $swaggerGetSingle);
