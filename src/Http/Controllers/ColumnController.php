@@ -314,7 +314,7 @@ class ColumnController extends Controller
  *      path="/MODEL_VARIABLE",
  *      security={{"api":{}}},
  *      operationId="MODEL_VARIABLE_index",
- *      summary="Get all MODEL_NAMES",
+ *      summary="Get all MODEL_NAMEs",
  *      description="Retrieve all MODEL_NAMEs",
  *      tags={"MODEL_NAME API CRUD"},
       *       @OA\Response(response=400, description="Bad request"),
@@ -417,10 +417,11 @@ class ColumnController extends Controller
  */';
 
         }
-
         $columnDefinitions = [];
         foreach($columns as $column) {
             $type = "string"; // default type
+            $format = "";     // default format, empty
+
             switch($column['type']) {
                 case "integer":
                 case "bigInteger":
@@ -449,11 +450,13 @@ class ColumnController extends Controller
                     $type = "string";
             }
 
-            $property = '@OA\Property(property="'.$column['name'].'", type="'.$type;
-            if(isset($format)) {
-                $property .= '", format="'.$format;
+            $property = '@OA\Property(property="'.$column['name'].'", type="'.$type.'"';
+
+            if(!empty($format)) {
+                $property .= ', format="'.$format.'"';
             }
-            $property .= '", example="Your example value here")';
+
+            $property .= ', example="Your example value here")';
             $columnDefinitions[] = $property;
         }
 
