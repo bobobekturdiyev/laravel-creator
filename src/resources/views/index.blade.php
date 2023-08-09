@@ -18,11 +18,11 @@
                     &copy; Created by Bobobek Turdiev - Programmer UZ
                 </li>  <li class="nav-item">
                 </li>
-
-                <li class="nav-item">
-                   <a class="btn btn-success" href="{{url('/api/documentation')}}" target="_blank">Open Swagger</a>
-                </li>
             </ul>
+
+            <div class="form-inline my-2 my-lg-0">
+                <a class="btn btn-success" href="{{url('/api/documentation')}}" target="_blank">Open Swagger</a>
+            </div>
 
         </div>
     </div>
