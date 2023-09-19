@@ -1,0 +1,97 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\MODEL_NAME;
+use Illuminate\Http\Request;
+
+class MODEL_CONTROLLER extends Controller
+{
+    /**
+     * Display a listing of the resource.
+     */
+    public function index()
+    {
+        $models = MODEL_NAME::orderByDesc('id')->get();
+
+        return view('MODEL_VARIABLE.MODEL_VARIABLE', ['models' => $models]);
+    }
+
+    /**
+     * Show the form for creating a new resource.
+     */
+    public function create()
+    {
+        return view('MODEL_VARIABLE.add-MODEL_VARIABLE');
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     */
+    public function store(Request $request)
+    {
+        $this->validate($request,[
+            VALIDATOR
+        ]);
+
+        $MODEL_VARIABLE = new MODEL_NAME();
+        MODEL_REQUEST
+        $MODEL_VARIABLE->save();
+
+        return redirect()->route('MODEL_VARIABLE.index')->with(['message' => "MODEL_NAME create successfully"]);
+    }
+
+    /**
+     * Display the specified resource.
+     */
+    public function show(string $id)
+    {
+        $MODEL_VARIABLE = MODEL_NAME::find($id);
+        return view('MODEL_VARIABLE.delete-MODEL_VARIABLE', ['id' => $id, 'model' => $MODEL_VARIABLE]);
+    }
+
+    /**
+     * Show the form for editing the specified resource.
+     */
+    public function edit(string $id)
+    {
+        $MODEL_VARIABLE = MODEL_NAME::find($id);
+        if(!$MODEL_VARIABLE){
+            abort(404);
+        }
+        return view('MODEL_VARIABLE.edit-MODEL_VARIABLE', ['model' => $MODEL_VARIABLE]);
+    }
+
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(Request $request, string $id)
+    {
+        $this->validate($request, [
+            VALIDATOR
+        ]);
+
+        $MODEL_VARIABLE = MODEL_NAME::find($id);
+        if (!$MODEL_VARIABLE) {
+            abort(404);
+        }
+        MODEL_REQUEST
+        $MODEL_VARIABLE->update();
+
+        return redirect()->route('MODEL_VARIABLE.index')->with(['message' => "MODEL_NAME update successfully"]);
+    }
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy(string $id)
+    {
+        $MODEL_VARIABLE = MODEL_NAME::find($id);
+        if(!$MODEL_VARIABLE){
+            abort(404);
+        }
+        MODEL_DELETE
+        $MODEL_VARIABLE->delete();
+
+        return redirect()->route('MODEL_VARIABLE.index')->with(['message' => 'MODEL_NAME delete successfully']);
+    }
+}

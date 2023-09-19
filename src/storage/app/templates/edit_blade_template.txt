@@ -1,0 +1,39 @@
+@extends('layouts.simple.master')
+@section('title', 'Edit MODEL_NAME Table')
+
+@section('css')
+@endsection
+
+@section('content')
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-sm-12 col-xl-12">
+                <div class="row">
+                    <div class="col-sm-12">
+                        <div class="card">
+                            <div class="card-header pb-0">
+                                <h5>Edit MODEL_NAME</h5>
+                            </div>
+                            <div class="card-body">
+                                <form class="form theme-form" action="{{route('MODEL_VARIABLE.update', ['MODEL_VARIABLE' => $model->id])}}" method="POST" enctype="multipart/form-data">
+                                    @method('put')
+                                    @csrf
+                                    EDIT_MODEL
+                                    <div class="card-footer">
+                                        <div class="col-sm-9 offset-sm-3">
+                                            <button class="btn btn-primary" type="submit">Submit</button>
+                                            <a class="btn btn-secondary" href="{{route('MODEL_VARIABLE.index')}}">Cancel</a>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+@endsection
+
+@section('script')
+@endsection

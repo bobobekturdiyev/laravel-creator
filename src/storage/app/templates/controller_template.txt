@@ -2,9 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Controller;
 use App\Models\MODEL_NAME;
 use App\Http\Resources\MODEL_RESOURCE;
+use App\Http\ValidatorResponse;
 use Illuminate\Http\Request;
+
+  SWAGGER_MODEL
 
 class MODEL_CONTROLLER extends Controller
 {
@@ -12,33 +16,89 @@ class MODEL_CONTROLLER extends Controller
     public function index()
     {
         $MODEL_VARIABLES = MODEL_NAME::all();
-        return MODEL_RESOURCE::collection($MODEL_VARIABLES);
+        return response()->json([
+            'data' => MODEL_RESOURCE::collection($MODEL_VARIABLES),
+        ]);
     }
 
     SWAGGER_GET_SINGLE
-    public function show(MODEL_NAME $MODEL_VARIABLE)
+    public function show(string $id)
     {
-        return new MODEL_RESOURCE($MODEL_VARIABLE);
+        $MODEL_VARIABLE = MODEL_NAME::find($id);
+        if(!$MODEL_VARIABLE){
+            return response()->json([
+                'message' => "MODEL_NAME not found",
+                'code' => 403,
+            ]);
+        }
+
+        return response()->json([
+            'data' => new MODEL_RESOURCE($MODEL_VARIABLE),
+            'code' => 200
+        ]);
     }
 
     SWAGGER_CREATE
     public function store(Request $request)
     {
-        $MODEL_VARIABLE = MODEL_NAME::create($request->all());
-        return new MODEL_RESOURCE($MODEL_VARIABLE);
+        $rules = VALIDATOR;
+        $validator = new ValidatorResponse();
+        $validator->check($request, $rules);
+        if($validator->fails){
+            return response()->json([
+                'message' => $validator->response,
+                'code' => 400
+            ]);
+        }
+        $MODEL_VARIABLE = new MODEL_NAME();
+        MODEL_REQUEST
+        $MODEL_VARIABLE->save();
+        return response()->json([
+            'data' => new MODEL_RESOURCE($MODEL_VARIABLE),
+            'code' => 200
+        ]);
     }
 
     SWAGGER_UPDATE
-    public function update(Request $request, MODEL_NAME $MODEL_VARIABLE)
+    public function update(Request $request, string $id)
     {
-        $MODEL_VARIABLE->update($request->all());
-        return new MODEL_RESOURCE($MODEL_VARIABLE);
+        $rules = VALIDATOR;
+        $validator = new ValidatorResponse();
+        $validator->check($request, $rules);
+        if($validator->fails){
+            return response()->json([
+                'message' => $validator->response,
+                'code' => 400
+            ]);
+        }
+        $MODEL_VARIABLE = MODEL_NAME::find($id);
+        if(!$MODEL_VARIABLE){
+            return response()->json([
+                'message' => "Event not found",
+                'code' => 404
+            ]);
+        }
+        MODEL_REQUEST
+        return response()->json([
+            'data' => new MODEL_RESOURCE($MODEL_VARIABLE),
+            'code' => 200
+        ]);
     }
 
     SWAGGER_DELETE
-    public function destroy(MODEL_NAME $MODEL_VARIABLE)
+    public function destroy(string $id)
     {
+        $MODEL_VARIABLE = MODEL_NAME::find($id);
+        if(!$MODEL_VARIABLE){
+            return response()->json([
+                'message' => "MODEL_NAME not found",
+                'code' => 404,
+            ]);
+        }
         $MODEL_VARIABLE->delete();
-        return response()->json(null, 204);
+        return response()->json([
+            'data' => new MODEL_RESOURCE($MODEL_VARIABLE),
+            'code' => 200
+        ]);
     }
 }

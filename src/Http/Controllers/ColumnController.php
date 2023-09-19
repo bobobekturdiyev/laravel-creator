@@ -13,7 +13,10 @@ class ColumnController extends Controller
 {
     public function generateColumns(Request $request)
     {
-
+        if($request->is_blade == "true"){
+            $bladeController = new BladeController();
+            $bladeController->generateColumns($request);
+        }
 
         $data = [];
         if ($request->model === 'true') {
@@ -22,9 +25,9 @@ class ColumnController extends Controller
         }
 
         if ($request->migration === 'true') {
-            $this->generateMigration($request->columns, $request->model_name);
+            return $this->generateMigration($request->columns, $request->model_name, $request->foreignKeys);
             $data[] = "migration generated";
-            Artisan::call('migrate');
+//            Artisan::call('migrate:refresh');
         }
 
         if ($request->factory === 'true') {
@@ -39,14 +42,16 @@ class ColumnController extends Controller
         }
 
         if ($request->controller === 'true') {
-            $this->generateController($request->model_name, $request->has_swagger, $request->columns);
-            $this->appendToApiRoutes($request->model_name);
-            $data[] = "controller generated";
+            $this->createValidatorResponseFile();
+            $pathName = str_replace('\\/', '/', $request->path_name);
+            $pathApi = $this->manipulateString($request->path_api);
+            $this->generateController($request->model_name, $request->has_swagger, $request->columns, $pathName, $pathApi);
+            $this->appendToApiRoutes($request->model_name, $pathName, $request->fileName);
+            $data[] = "controller generated" . $pathName;
 
-            if($request->has_swagger === 'true') {
+            if ($request->has_swagger === 'true') {
                 $exitCode = Artisan::call('l5-swagger:generate');
             }
-
         }
 
 
@@ -69,7 +74,7 @@ class ColumnController extends Controller
 
     }
 
-    private function generateMigration($columns, $modelName)
+    private function generateMigration($columns, $modelName, $foreignKeys)
     {
         $migrationTemplate = __DIR__ . '/../../storage/app/templates/migration_template.txt';
         $migrationTemplate = File::get($migrationTemplate);
@@ -86,7 +91,7 @@ class ColumnController extends Controller
             $nullableCode = '';
 
             if (isset($column['default']) && !empty($column['default'])) {
-                $defaultCode = "->default('" . str_replace(' ', '', $column['default']). "')";
+                $defaultCode = "->default('" . str_replace(' ', '', $column['default']) . "')";
             }
 
             if (isset($column['nullable']) && $column['nullable'] === "true") {
@@ -94,12 +99,20 @@ class ColumnController extends Controller
             }
 
             switch ($type) {
+                case 'bigIncrements':
+                    $code = "\$table->id()";
+                    break;
                 case 'integer':
                     $code = "\$table->integer('{$columnName}')";
                     break;
+                case 'unsignedBigInteger':
+                    $code = "\$table->unsignedBigInteger('{$columnName}')";
+                    break;
                 case 'string':
-                    $length = $column['length'];
-                    $code = "\$table->string('{$columnName}', {$length})";
+                    if($column['isFile'] !== "true"){
+                        isset($column['length']) ? $length = ', ' . $column['length'] : $length = '';
+                    }
+                    $code = "\$table->string('{$columnName}'{$length})";
                     break;
                 case 'text':
                     $code = "\$table->text('{$columnName}')";
@@ -113,8 +126,8 @@ class ColumnController extends Controller
                 case 'enum':
                     $enumValues = explode(',', $column['length']);
 
-                    for($i = 0; $i < count($enumValues); $i++){
-                        $enumValues[$i] = str_replace(' ', '',  $enumValues[$i]);
+                    for ($i = 0; $i < count($enumValues); $i++) {
+                        $enumValues[$i] = str_replace(' ', '', $enumValues[$i]);
                     }
 
                     $formattedEnumValues = implode("', '", $enumValues);
@@ -165,12 +178,22 @@ class ColumnController extends Controller
             }
 
             if ($code != "") {
-                $columnDefinitions .= "\t\t\t{$code}{$nullableCode}{$defaultCode};\n";
+                $columnDefinitions .= "{$code}{$nullableCode}{$defaultCode};\n\t\t\t";
+            }
+
+
+        }
+        if(isset($foreignKeys)){
+            foreach ($foreignKeys as $foreignKey){
+                $primary_key_model = Str::plural(Str::snake($foreignKey['primary_key_model']));
+                $columnDefinitions .= "\$table->foreign('{$foreignKey['foreign_key']}')->references('id')->on('{$primary_key_model}');\n\t\t\t";
             }
         }
 
         $migrationContent = str_replace(['{MODEL_NAME}', '{TABLE_NAME}', '{COLUMN_DEFINITIONS}'], [$modelName, $migrationName, $columnDefinitions], $migrationTemplate);
         $migrationFilePath = base_path("database/migrations/{$tableName}");
+        $this->isMigrationFile($tableName);
+
         File::put($migrationFilePath, $migrationContent);
     }
 
@@ -204,7 +227,7 @@ class ColumnController extends Controller
                 case 'enum':
                     $enumValues = explode(',', $column['length']);
                     $randomValue = $enumValues[array_rand($enumValues)];
-                    $field = "'{$columnName}' => '". str_replace(" ", "", $randomValue)."',";
+                    $field = "'{$columnName}' => '" . str_replace(" ", "", $randomValue) . "',";
                     break;
                 case 'boolean':
                     $field = "'{$columnName}' => \$this->faker->boolean,";
@@ -295,7 +318,7 @@ class ColumnController extends Controller
     }
 
 
-    public function generateController($modelName, $has_swagger, $columns)
+    public function generateController($modelName, $has_swagger, $columns, $pathController, $pathApi)
     {
         $modelVariable = strtolower($modelName);
         $modelResource = "{$modelName}Resource";
@@ -308,25 +331,46 @@ class ColumnController extends Controller
         $swaggerUpdate = '';
         $swaggerDelete = '';
 
-        if($has_swagger == "true") {
+        if ($has_swagger == "true") {
+
+            $swaggerModel = '/**
+ * @OA\Schema(
+ *     schema="MODEL_NAME",
+ *     title="MODEL_NAME title",
+ *     @OA\Property(property="success", type="boolean", example=true),
+ *     @OA\Property(property="message", type="string", example="Successfully"),
+ *     @OA\Property(
+ *         property="data",
+ *         type="array",
+ *         @OA\Items(
+ *              COLUMN_DEFINITIONS
+ *         )
+ *     ),
+ *     @OA\Property(property="code", type="integer", example=200),
+ * )
+ */';
+
             $swaggerGetAll = '/**
- * @OA\Get(
- *      path="/api/MODEL_VARIABLE",
+ *@OA\Get(
+ *      path="/PATH/MODEL_VARIABLE",
  *      security={{"api":{}}},
  *      operationId="MODEL_VARIABLE_index",
  *      summary="Get all MODEL_NAMEs",
  *      description="Retrieve all MODEL_NAMEs",
  *      tags={"MODEL_NAME API CRUD"},
-      *       @OA\Response(response=400, description="Bad request"),
-     *      @OA\Response(response=404, description="Not found"),
-     *      @OA\Response(response=500, description="Server error")
+ *      @OA\Response(response=200,description="Successful operation",
+ *           @OA\JsonContent(ref="#/components/schemas/MODEL_NAME"),
+ *      ),
+ *      @OA\Response(response=404,description="Not found",
+ *          @OA\JsonContent(ref="#/components/schemas/Error"),
+ *      ),
  * )
  */';
 
 
             $swaggerGetSingle = '/**
  * @OA\Get(
- *      path="/api/MODEL_VARIABLE/{id}",
+ *      path="/PATH/MODEL_VARIABLE/{id}",
  *      security={{"api":{}}},
  *      operationId="MODEL_VARIABLE_show",
  *      summary="Get a single MODEL_NAME by ID",
@@ -339,16 +383,19 @@ class ColumnController extends Controller
  *          description="ID of the MODEL_NAME to retrieve",
  *          @OA\Schema(type="integer")
  *      ),
-      *       @OA\Response(response=400, description="Bad request"),
-     *      @OA\Response(response=404, description="Not found"),
-     *      @OA\Response(response=500, description="Server error")
+ *      @OA\Response(response=200,description="Successful operation",
+ *          @OA\JsonContent(ref="#/components/schemas/MODEL_NAME"),
+ *     ),
+ *      @OA\Response(response=404,description="Not found",
+ *          @OA\JsonContent(ref="#/components/schemas/Error"),
+ *      ),
  * )
  */';
 
 
             $swaggerCreate = '/**
  * @OA\Post(
- *      path="/api/MODEL_VARIABLE",
+ *      path="/PATH/MODEL_VARIABLE",
  *      security={{"api":{}}},
  *      operationId="MODEL_VARIABLE_store",
  *      summary="Create a new MODEL_NAME",
@@ -357,18 +404,23 @@ class ColumnController extends Controller
  *      @OA\RequestBody(required=true, description="MODEL_NAME save",
  *           @OA\MediaType(mediaType="multipart/form-data",
  *              @OA\Schema(type="object", required=COLUMNS_REQUIRED,
- *                 COLUMN_DEFINITIONS
+ *                  COLUMN_DEFINITIONS
  *              )
  *          )
  *      ),
- *       @OA\Response(response=400, description="Bad request")
+ *       @OA\Response(response=200,description="Successful operation",
+ *           @OA\JsonContent(ref="#/components/schemas/MODEL_NAME"),
+ *      ),
+ *       @OA\Response(response=404,description="Not found",
+ *          @OA\JsonContent(ref="#/components/schemas/Error"),
+ *      ),
  * )
  */';
 
 
             $swaggerUpdate = '/**
- * @OA\Put(
- *      path="/api/MODEL_VARIABLE/{id}",
+ * @OA\Post(
+ *      path="/PATH/MODEL_VARIABLE/{id}",
  *      security={{"api":{}}},
  *      operationId="MODEL_VARIABLE_update",
  *      summary="Update a MODEL_NAME by ID",
@@ -381,23 +433,28 @@ class ColumnController extends Controller
  *          description="ID of the MODEL_NAME to update",
  *          @OA\Schema(type="integer")
  *      ),
- *      @OA\RequestBody(required=true, description="MODEL_NAME update",
+ *           @OA\RequestBody(required=true, description="MODEL_NAME save",
  *           @OA\MediaType(mediaType="multipart/form-data",
  *              @OA\Schema(type="object", required=COLUMNS_REQUIRED,
- *                 COLUMN_DEFINITIONS
+ *                  COLUMN_DEFINITIONS,
+ *				    @OA\Property(property="_method", type="string", example="PUT", description="Read-only: This property cannot be modified."),
  *              )
  *          )
  *      ),
-      *       @OA\Response(response=400, description="Bad request"),
-     *      @OA\Response(response=404, description="Not found"),
-     *      @OA\Response(response=500, description="Server error")
+ *
+ *     @OA\Response(response=200,description="Successful operation",
+ *           @OA\JsonContent(ref="#/components/schemas/MODEL_NAME"),
+ *      ),
+ *     @OA\Response(response=404,description="Not found",
+ *          @OA\JsonContent(ref="#/components/schemas/Error"),
+ *      ),
  * )
  */';
 
 
             $swaggerDelete = '/**
  * @OA\Delete(
- *      path="/api/MODEL_VARIABLE/{id}",
+ *      path="/PATH/MODEL_VARIABLE/{id}",
  *      security={{"api":{}}},
  *      operationId="MODEL_VARIABLE_delete",
  *      summary="Delete a MODEL_NAME by ID",
@@ -410,121 +467,251 @@ class ColumnController extends Controller
  *          description="ID of the MODEL_NAME to delete",
  *          @OA\Schema(type="integer")
  *      ),
-*       @OA\Response(response=400, description="Bad request"),
-     *      @OA\Response(response=404, description="Not found"),
-     *      @OA\Response(response=500, description="Server error")
+ *          @OA\Response(response=200,description="Successful operation",
+ *           @OA\JsonContent(ref="#/components/schemas/MODEL_NAME"),
+ *      ),
+ *      @OA\Response(response=404,description="Not found",
+ *          @OA\JsonContent(ref="#/components/schemas/Error"),
+ *      ),
  * )
  */';
 
-        }
-        $columnDefinitions = [];
-        foreach($columns as $column) {
-            $type = "string"; // default type
-            $format = "";     // default format, empty
 
-            switch($column['type']) {
-                case "integer":
-                case "bigInteger":
-                case "unsignedBigInteger":
-                case "smallInteger":
-                case "unsignedInteger":
-                case "tinyInteger":
-                    $type = "integer";
-                    break;
-                case "float":
-                case "double":
-                case "decimal":
-                    $type = "number";
-                    break;
-                case "boolean":
-                    $type = "boolean";
-                    break;
-                case "timestamp":
-                case "date":
-                case "dateTime":
-                case "dateTimeTz":
-                    $type = "string";
-                    $format = "date-time";
-                    break;
-                default:
-                    $type = "string";
+            $columnDefinitions = [];
+            $rulesValidator = [];
+            $model = [];
+            foreach ($columns as $column) {
+                $validator_type = 'string|max:255';
+                $type = "string"; // default type
+                $format = "";     // default format, empty
+
+                switch ($column['type']) {
+                    case "integer":
+                    case "bigInteger":
+                    case "bigIncrements":
+                    case "unsignedBigInteger":
+                    case "smallInteger":
+                    case "unsignedInteger":
+                    case "tinyInteger":
+                        $type = "integer";
+                        $validator_type = 'integer';
+                        break;
+                    case "float":
+                    case "double":
+                    case "decimal":
+                        $type = "number";
+                        $validator_type = 'integer';
+                        break;
+                    case "boolean":
+                        $type = "boolean";
+                        $validator_type = "boolean";
+                        break;
+                    case "timestamp":
+                    case "date":
+                    case "dateTime":
+                    case "dateTimeTz":
+                        $type = "string";
+                        $format = "date-time";
+                        $validator_type = 'date';
+                        break;
+                    default:
+                        $type = "string";
+                }
+
+                if ($column['isFile'] == 'true') {
+                    $type = 'file';
+                    $validator_type = "mimes:" . $column['length'];
+                }
+                $property = '@OA\Property(property="' . $column['name'] . '", type="' . $type . '"';
+                if (!empty($format)) {
+                    $property .= ', format="' . $format . '"';
+                }
+                $columnDefinitionsModel[] = $property . ')';
+                $property .= ', example="")';
+                if ($column['type'] != 'bigIncrements' and $column['type'] != 'timestamp') {
+                    if ($column['isFile'] == 'true') {
+                        $model[] = str_replace('COLUMN_NAME', $column['name'], $this->file);
+                    } else {
+                        $model[] = '$MODEL_VARIABLE->' . $column['name'] . " = " . '$request->' . $column['name'] . ';';
+                    }
+                    $columnDefinitions[] = $property;
+                    if ($column['nullable'] == 'false') {
+                        $rulesValidator[$column['name']] = "required|$validator_type";
+                    }
+                }
+            }
+            $modelStr = implode("\n\t\t", $model);
+            $modelStr = str_replace('MODEL_VARIABLE', $modelVariable, $modelStr);
+
+            $columnDefinitionsModelStr = implode(",\n *\t\t\t\t", $columnDefinitionsModel);
+            $swaggerModel = str_replace('COLUMN_DEFINITIONS', $columnDefinitionsModelStr, $swaggerModel);
+
+            $columnDefinitionsStr = implode(",\n *\t\t\t\t\t", $columnDefinitions);
+            $swaggerUpdate = str_replace('COLUMN_DEFINITIONS', $columnDefinitionsStr, $swaggerUpdate);
+            $swaggerCreate = str_replace('COLUMN_DEFINITIONS', $columnDefinitionsStr, $swaggerCreate);
+
+            $requiredColumns = [];
+
+            foreach ($columns as $column) {
+                if ($column['nullable'] == 'false' and $column['name'] != 'id') {
+                    $requiredColumns[] = $column['name'];
+                }
             }
 
-            $property = '@OA\Property(property="'.$column['name'].'", type="'.$type.'"';
+            $COLUMNS_REQUIRED = '{"' . implode('", "', $requiredColumns) . '"}';
+            $swaggerUpdate = str_replace('COLUMNS_REQUIRED', $COLUMNS_REQUIRED, $swaggerUpdate);
+            $swaggerCreate = str_replace('COLUMNS_REQUIRED', $COLUMNS_REQUIRED, $swaggerCreate);
 
-            if(!empty($format)) {
-                $property .= ', format="'.$format.'"';
+            $swaggerGetAll = str_replace('MODEL_VARIABLE', $modelVariable, $swaggerGetAll);
+            $swaggerGetSingle = str_replace('MODEL_VARIABLE', $modelVariable, $swaggerGetSingle);
+            $swaggerCreate = str_replace('MODEL_VARIABLE', $modelVariable, $swaggerCreate);
+            $swaggerUpdate = str_replace('MODEL_VARIABLE', $modelVariable, $swaggerUpdate);
+            $swaggerDelete = str_replace('MODEL_VARIABLE', $modelVariable, $swaggerDelete);
+
+            $swaggerModel = str_replace('MODEL_NAME', $modelName, $swaggerModel);
+            $swaggerGetAll = str_replace('MODEL_NAME', $modelName, $swaggerGetAll);
+            $swaggerGetSingle = str_replace('MODEL_NAME', $modelName, $swaggerGetSingle);
+            $swaggerCreate = str_replace('MODEL_NAME', $modelName, $swaggerCreate);
+            $swaggerUpdate = str_replace('MODEL_NAME', $modelName, $swaggerUpdate);
+            $swaggerDelete = str_replace('MODEL_NAME', $modelName, $swaggerDelete);
+            $swaggerGetAll = str_replace('MODEL_NAME', $modelName, $swaggerGetAll);
+
+            $swaggerGetAll = str_replace('PATH', $pathApi, $swaggerGetAll);
+            $swaggerGetSingle = str_replace('PATH', $pathApi, $swaggerGetSingle);
+            $swaggerCreate = str_replace('PATH', $pathApi, $swaggerCreate);
+            $swaggerUpdate = str_replace('PATH', $pathApi, $swaggerUpdate);
+            $swaggerDelete = str_replace('PATH', $pathApi, $swaggerDelete);
+
+            // Replace the placeholders with real data
+            $replacements = [
+                'MODEL_NAME' => $modelName,
+                'MODEL_VARIABLE' => $modelVariable,
+                'MODEL_RESOURCE' => $modelResource,
+                'MODEL_CONTROLLER' => $controllerName,
+                'SWAGGER_MODEL' => $swaggerModel,
+                'SWAGGER_GET_ALL' => $swaggerGetAll,
+                'SWAGGER_GET_SINGLE' => $swaggerGetSingle,
+                'SWAGGER_CREATE' => $swaggerCreate,
+                'SWAGGER_UPDATE' => $swaggerUpdate,
+                'SWAGGER_DELETE' => $swaggerDelete,
+                'VALIDATOR' => var_export($rulesValidator, true),
+                'MODEL_REQUEST' => $modelStr,
+            ];
+
+            foreach ($replacements as $placeholder => $replacement) {
+                $templateContent = str_replace($placeholder, $replacement, $templateContent);
             }
-
-            $property .= ', example="")';
-            $columnDefinitions[] = $property;
         }
 
-        $columnDefinitionsStr = implode(",\n", $columnDefinitions);
-        $swaggerUpdate = str_replace('COLUMN_DEFINITIONS', $columnDefinitionsStr, $swaggerUpdate);
-        $swaggerCreate = str_replace('COLUMN_DEFINITIONS', $columnDefinitionsStr, $swaggerCreate);
-
-        $requiredColumns = [];
-
-        foreach ($columns as $column) {
-            if ($column['nullable'] == 'false') {
-                $requiredColumns[] = $column['name'];
-            }
-        }
-
-        $COLUMNS_REQUIRED = '{"' . implode('", "', $requiredColumns) . '"}';
-        $swaggerUpdate = str_replace('COLUMNS_REQUIRED', $COLUMNS_REQUIRED, $swaggerUpdate);
-        $swaggerCreate = str_replace('COLUMNS_REQUIRED', $COLUMNS_REQUIRED, $swaggerCreate);
-
-        $swaggerGetAll = str_replace('MODEL_VARIABLE', $modelVariable, $swaggerGetAll);
-        $swaggerGetSingle = str_replace('MODEL_VARIABLE', $modelVariable, $swaggerGetSingle);
-        $swaggerCreate = str_replace('MODEL_VARIABLE', $modelVariable, $swaggerCreate);
-        $swaggerUpdate = str_replace('MODEL_VARIABLE', $modelVariable, $swaggerUpdate);
-        $swaggerDelete = str_replace('MODEL_VARIABLE', $modelVariable, $swaggerDelete);
-
-        $swaggerGetAll = str_replace('MODEL_NAME', $modelName, $swaggerGetAll);
-        $swaggerGetSingle = str_replace('MODEL_NAME', $modelName, $swaggerGetSingle);
-        $swaggerCreate = str_replace('MODEL_NAME', $modelName, $swaggerCreate);
-        $swaggerUpdate = str_replace('MODEL_NAME', $modelName, $swaggerUpdate);
-        $swaggerDelete = str_replace('MODEL_NAME', $modelName, $swaggerDelete);
-
-        // Replace the placeholders with real data
-        $replacements = [
-            'MODEL_NAME' => $modelName,
-            'MODEL_VARIABLE' => $modelVariable,
-            'MODEL_RESOURCE' => $modelResource,
-            'MODEL_CONTROLLER' => $controllerName,
-            'SWAGGER_GET_ALL' => $swaggerGetAll,
-            'SWAGGER_GET_SINGLE' => $swaggerGetSingle,
-            'SWAGGER_CREATE' => $swaggerCreate,
-            'SWAGGER_UPDATE' => $swaggerUpdate,
-            'SWAGGER_DELETE' => $swaggerDelete
-        ];
-
-        foreach ($replacements as $placeholder => $replacement) {
-            $templateContent = str_replace($placeholder, $replacement, $templateContent);
-        }
+        $templateContent = str_replace('namespace App\Http\Controllers', "namespace App\Http\\" . $this->removeTrailingSlash($this->slashes($pathController)), $templateContent);
 
         $controllerDirectory = app_path("Http/Controllers");
         $fileName = "$controllerName.php";
 
-        File::put("$controllerDirectory/$fileName", $templateContent);
+        $pathController = $this->ensureTrailingSlash($pathController);
+        $path = "$controllerDirectory/$fileName";
+
+        $path = str_replace('/Controllers/', $pathController, $path);
+
+        $this->createDirectoryIfNotExists($pathController);
+
+        File::put($path, $templateContent);
 
         $this->controllerName = $controllerName;
     }
 
+    private function createDirectoryIfNotExists($path)
+    {
+        $basePath = app_path('Http/');
+        $fullPath = $basePath . '/' . trim($path, '/');
+
+        if (!is_dir($fullPath)) {
+            mkdir($fullPath, 0755, true);
+        }
+    }
+
+    private function ensureTrailingSlash($inputString)
+    {
+        if (substr($inputString, -1) !== '/') {
+            // Add a trailing slash if it's missing
+            $inputString .= '/';
+        }
+        return $inputString;
+    }
+
+    private function removeTrailingSlash($input)
+    {
+        if (substr($input, -1) === '\\') {
+            return substr($input, 0, -1);
+        }
+        return $input;
+    }
+
+    private function slashes($input)
+    {
+        if (substr($input, 0, 1) === '/') {
+            $input = substr($input, 1);
+        }
+
+        return str_replace('/', '\\', $input);
+    }
+
     private $controllerName;
 
-    public function appendToApiRoutes($modelName) {
+    public function appendToApiRoutes($modelName, $pathController, $fileName)
+    {
         $modelVariable = \Illuminate\Support\Str::snake($modelName);
         $controllerName = $this->controllerName;
 
-        $routeToAdd = "Route::apiResource('{$modelVariable}', \App\Http\Controllers\\$controllerName::class);\n";
+        $routeToAdd = "Route::apiResource('{$modelVariable}', \App\Http\\".$this->removeTrailingSlash($this->slashes($pathController))."\\$controllerName::class);\n";
 
-        $apiRoutesPath = base_path('routes/api.php');
+            $apiRoutesPath = base_path("routes/$fileName");
 
         // Open the file in append mode and add the new route
         file_put_contents($apiRoutesPath, $routeToAdd, FILE_APPEND);
     }
 
+    public function manipulateString($input) {
+        return rtrim($input, '/');
+    }
+
+    private function createValidatorResponseFile(){
+        $validatorResponseFilePath = app_path('Http/ValidatorResponse.php');
+        $validatorTemplateFilePath = base_path('validator_template.txt');
+
+        if (!File::exists($validatorResponseFilePath)) {
+            $templateContents = File::get(__DIR__ . '/../../storage/app/templates/validator_template.txt');;
+            file_put_contents(app_path('Http/' . 'ValidatorResponse.php'), $templateContents);
+        }
+    }
+
+    private function isMigrationFile($newTabelName){
+        $pattern = '/^(\d{4}_\d{2}_\d{2}_\d{6})_(create_\w+_table)\.php$/';
+        preg_match($pattern, $newTabelName, $matches);
+        $newTabelName = $matches[2];
+        $migrationsPath = database_path('migrations');
+        $migrationFiles = scandir($migrationsPath);
+        foreach ($migrationFiles as $file) {
+            if($file !== "." and $file !== "..") {
+                preg_match($pattern, $file, $matches);
+                $tabelName = $matches[2];
+                if ($newTabelName == $tabelName) {
+                    unlink($migrationsPath . "/$file");
+                }
+            }
+        }
+    }
+
+    private $file = 'if ($request->hasFile("COLUMN_NAME")) {
+            $file = $request->file("COLUMN_NAME");
+            $filename = time(). "_" . $file->getClientOriginalName();
+            if ($MODEL_VARIABLE->COLUMN_NAME) {
+                $oldFilePath = \'uploads/COLUMN_NAME/\'.basename($MODEL_VARIABLE->COLUMN_NAME);
+                if (file_exists($oldFilePath)) {
+                    unlink($oldFilePath);
+                }
+            }
+            $file->move("uploads/COLUMN_NAME", $filename);
+            $MODEL_VARIABLE->COLUMN_NAME = asset("uploads/COLUMN_NAME/$filename");
+        }';
 }
